@@ -1,0 +1,23 @@
+{
+  "name": "ao-community-closet",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx scripts/local-server.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "@netlify/blobs": "^11.1.11"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.1.2",
+    "@types/node": "^26.6.10",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

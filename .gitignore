@@ -1,6 +1,9 @@
-.venv/
-__pycache__/
+node_modules/
+.netlify/
+local.db
 *.db
 *.db-journal
-uploads/
+.local-photos/
 .secret_key
+.venv/
+__pycache__/

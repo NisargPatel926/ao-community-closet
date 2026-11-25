@@ -1,0 +1,7 @@
+[build]
+  publish = "public"
+
+[functions]
+  node_bundler = "esbuild"
+  # @libsql/client ships native code for local files; production talks to Turso over HTTPS.
+  external_node_modules = ["@libsql/client", "libsql"]

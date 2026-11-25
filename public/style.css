@@ -185,3 +185,5 @@ input, select, textarea, button { font-family: var(--hand); font-size: 20px; col
 .tabs a.on { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
 
 :focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+code { font-family: ui-monospace, monospace; font-size: 16px; background: #f1efe4; padding: 1px 5px; }

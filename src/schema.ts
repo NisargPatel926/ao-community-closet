@@ -1,5 +1,7 @@
+// AO Community Closet — database schema (SQLite / Turso).
+// Runs on cold start; every statement is idempotent.
+export const SCHEMA = `
 -- AO Community Closet — SQLite schema
-PRAGMA foreign_keys = ON;
 
 -- People in the friend group.
 CREATE TABLE IF NOT EXISTS users (
@@ -75,3 +77,4 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+`;
