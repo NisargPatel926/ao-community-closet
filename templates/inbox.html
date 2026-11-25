@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Inbox · AO Community Closet{% endblock %}
+{% block content %}
+<div class="two">
+  <section class="main">
+    <h1 style="padding-top:4px">Inbox</h1>
+    <p class="muted" style="margin:-8px 0 6px;font-size:22px">Who wants your stuff, and what's still out.</p>
+
+    {% if not notes %}
+      <div class="empty wobbly">Nothing yet. When a friend wants to borrow something of yours, it shows up here.</div>
+    {% endif %}
+
+    {% for n in notes %}
+    {% set pending = n.kind == 'borrow_request' and n.loan_status == 'requested' %}
+    <article class="note wobbly2 {{ 'read' if n.is_read and not pending }}">
+      <div class="top">
+        <p>
+          {% if n.kind == 'borrow_request' %}<b>{{ n.actor_name }}</b> wants to borrow your <b>{{ n.item_name }}</b>
+          {% elif n.kind == 'request_approved' %}<b>{{ n.actor_name }}</b> said yes to lending you the <b>{{ n.item_name }}</b>
+          {% elif n.kind == 'request_declined' %}<b>{{ n.actor_name }}</b> can't lend you the <b>{{ n.item_name }}</b> right now
+          {% elif n.kind == 'item_returned' %}<b>{{ n.actor_name }}</b> marked the <b>{{ n.item_name }}</b> as returned. Thanks!
+          {% endif %}
+        </p>
+        <span class="muted" style="font-size:17px">{{ n.created_at[:16] }} UTC</span>
+      </div>
+      {% if n.kind == 'borrow_request' %}
+        {% if n.start_date or n.end_date %}<p class="muted" style="margin:0">Pick up {{ n.start_date or '?' }} · back by {{ n.end_date or '?' }}</p>{% endif %}
+        {% if n.message %}<p class="quote">&ldquo;{{ n.message }}&rdquo;</p>{% endif %}
+        {% if pending %}
+        <div class="actions">
+          <form method="post" action="{{ url_for('approve_loan', loan_id=n.loan_id) }}">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <button class="btn wobbly" type="submit">Sounds good</button>
+          </form>
+          <form method="post" action="{{ url_for('decline_loan', loan_id=n.loan_id) }}">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <button class="btn light wobbly" type="submit">Sorry, can't right now</button>
+          </form>
+        </div>
+        {% elif n.loan_status == 'approved' %}<p class="ok">You said yes.</p>
+        {% elif n.loan_status == 'declined' %}<p class="ok">You passed. It's back in the closet.</p>
+        {% elif n.loan_status == 'returned' %}<p class="ok">Returned.</p>
+        {% endif %}
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+
+  <aside class="side" style="padding-top:8px">
+    <div class="panel wobbly" style="transform:rotate(.6deg)">
+      <h2 class="marker" style="margin:0 0 12px;font-size:26px">Your stuff that's out</h2>
+      {% if lent_out %}
+      <ul class="list-plain">
+        {% for l in lent_out %}
+        <li>
+          <b style="font-size:21px">{{ l.item_name }}</b>
+          <span class="{{ 'late' if l.late else 'muted' }}">with {{ l.borrower_name }}{% if l.end_date %} · due {{ l.end_date }}{% endif %}{% if l.late %} (late!){% endif %}</span>
+          <form method="post" action="{{ url_for('return_loan', loan_id=l.id) }}">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <button class="btn light wobbly" type="submit" style="font-size:19px">Got it back</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="muted" style="margin:12px 0 0;font-size:17px">"Got it back" removes the BORROWED stamp.</p>
+      {% else %}
+      <p class="muted" style="margin:0">Nothing of yours is out right now.</p>
+      {% endif %}
+    </div>
+
+    <div class="panel wobbly2" style="transform:rotate(-.6deg)">
+      <h2 class="marker" style="margin:0 0 12px;font-size:26px">Stuff you're borrowing</h2>
+      {% if borrowing %}
+      <ul class="list-plain">
+        {% for l in borrowing %}
+        <li>
+          <b style="font-size:21px">{{ l.item_name }}</b>
+          <span class="muted">from {{ l.lender_name }}{% if l.end_date %} · give back by {{ l.end_date }}{% endif %}</span>
+          <span class="muted" style="font-size:17px">{{ 'Waiting on ' ~ l.lender_name if l.status == 'requested' else l.lender_name ~ ' said yes' }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted" style="margin:0">You're not borrowing anything.</p>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

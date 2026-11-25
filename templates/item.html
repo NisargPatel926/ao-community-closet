@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }} · AO Community Closet{% endblock %}
+{% block content %}
+{% set borrowed = item.status == 'borrowed' %}
+{% set mine = item.owner_id == me.id %}
+<p style="margin:18px 0 0"><a href="{{ url_for('browse') }}">&larr; back to the closet</a></p>
+<div class="detail">
+  <div class="gallery">
+    <div class="card {{ 'is-borrowed' if borrowed }}">
+      <div class="tape"></div>
+      <div class="photo">
+        {% if photos %}<img id="main-photo" src="{{ url_for('uploaded_file', filename=photos[0].filename) }}" alt="Photo of {{ item.name }}">{% endif %}
+        {% if borrowed %}<span class="stamp">BORROWED</span>{% endif %}
+      </div>
+    </div>
+    {% if photos|length > 1 %}
+    <div class="thumbs">
+      {% for p in photos %}
+      <a href="{{ url_for('uploaded_file', filename=p.filename) }}"
+         onclick="document.getElementById('main-photo').src=this.href;return false;"
+         aria-label="Show photo {{ loop.index }}"><img src="{{ url_for('uploaded_file', filename=p.filename) }}" alt=""></a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <section class="info">
+    <h1>{{ item.name }}</h1>
+    <p class="meta" style="font-size:22px">{{ item.category }} · {{ 'size ' ~ item.size if item.size else 'one size' }} · {{ item.condition }}</p>
+    <div class="owner" style="font-size:21px">
+      <span class="avatar" aria-hidden="true">{{ item.owner_name[:1]|upper }}</span>
+      <span>from <b>{{ 'you' if mine else item.owner_name }}</b> (@{{ item.owner_username }})</span>
+    </div>
+    {% if item.description %}<p style="font-size:22px;white-space:pre-line">{{ item.description }}</p>{% endif %}
+    {% if item.rules %}<p class="rule">House rules: {{ item.rules }}</p>{% endif %}
+
+    {% if borrowed %}
+      <p class="out" style="font-size:21px">With {{ item.borrower_name or 'someone' }}{% if item.due_date %} until {{ item.due_date }}{% endif %}. You can look, but you can't check it out right now.</p>
+      <button class="btn wobbly" disabled style="align-self:flex-start">Can't borrow right now</button>
+    {% elif mine %}
+      <p class="muted">This is yours. Friends can add it to their cart.</p>
+      <form method="post" action="{{ url_for('delete_item', item_id=item.id) }}" onsubmit="return confirm('Take this out of the closet for good?')">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <button class="btn light wobbly" type="submit">Remove from the closet</button>
+      </form>
+    {% elif in_cart %}
+      <form method="post" action="{{ url_for('cart_remove', item_id=item.id) }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="back" value="{{ request.path }}">
+        <button class="btn incart wobbly" type="submit">In your cart (remove)</button>
+      </form>
+      <a href="{{ url_for('cart') }}">go to cart &rarr;</a>
+    {% else %}
+      <form method="post" action="{{ url_for('cart_add', item_id=item.id) }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="back" value="{{ request.path }}">
+        <button class="btn wobbly" type="submit">Add to cart</button>
+      </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sign up' if mode == 'signup' else 'Log in' }} · AO Community Closet{% endblock %}
+{% block content %}
+<div class="auth">
+  <section class="pitch">
+    <span class="brand-label wobbly" style="align-self:flex-start;font-size:clamp(32px,6vw,46px);padding:8px 22px;transform:rotate(-2deg)">AO Community Closet</span>
+    <p>A notebook of clothes and stuff our friend group is happy to lend out.</p>
+    <ol>
+      <li>Snap a photo of something you don't mind lending.</li>
+      <li>Browse what everyone else has listed.</li>
+      <li>Add stuff to your cart, check out, and the owner gets a heads-up.</li>
+      <li>Give it back. (Seriously.)</li>
+    </ol>
+  </section>
+
+  <section class="box wobbly2">
+    <div class="tape" style="width:110px;margin-left:-55px;transform:rotate(2deg)"></div>
+    <nav class="tabs" aria-label="Account">
+      <a href="{{ url_for('login') }}" class="{{ 'on' if mode == 'login' }}" {% if mode == 'login' %}aria-current="page"{% endif %}>Log in</a>
+      <a href="{{ url_for('signup') }}" class="{{ 'on' if mode == 'signup' }}" {% if mode == 'signup' %}aria-current="page"{% endif %}>Sign up</a>
+    </nav>
+    <form method="post">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      {% if mode == 'signup' %}
+      <div class="field">
+        <label for="display_name">Your name (what friends call you)</label>
+        <input id="display_name" name="display_name" class="wobbly" maxlength="40" value="{{ request.form.display_name }}">
+      </div>
+      {% endif %}
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" class="wobbly" autocomplete="username" required value="{{ request.form.username }}">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" class="wobbly" required
+               autocomplete="{{ 'new-password' if mode == 'signup' else 'current-password' }}"
+               {% if mode == 'signup' %}minlength="8"{% endif %}>
+      </div>
+      {% if mode == 'signup' %}
+      <div class="field">
+        <label for="password2">Password again</label>
+        <input id="password2" name="password2" type="password" class="wobbly" required minlength="8" autocomplete="new-password">
+      </div>
+      {% if need_code %}
+      <div class="field">
+        <label for="invite_code">Invite code (ask in the group chat)</label>
+        <input id="invite_code" name="invite_code" class="wobbly" required>
+      </div>
+      {% endif %}
+      {% endif %}
+      <button class="btn wobbly" type="submit" style="margin-top:8px">{{ 'Make my account' if mode == 'signup' else 'Open the closet' }}</button>
+      <p class="muted" style="margin:0;text-align:center;font-size:18px">
+        {% if mode == 'signup' %}Already in? <a href="{{ url_for('login') }}">Log in</a>{% else %}New here? <a href="{{ url_for('signup') }}">Make an account</a>{% endif %}
+      </p>
+    </form>
+  </section>
+</div>
+{% endblock %}

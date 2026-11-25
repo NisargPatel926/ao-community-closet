@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Browse · AO Community Closet{% endblock %}
+{% block content %}
+<section class="intro">
+  <div>
+    <h1>Stuff you can borrow</h1>
+    <p>Everything your friends are willing to lend. Please bring it back.</p>
+  </div>
+  {% if total %}<p class="aside-note">&larr; {{ total }} thing{{ 's' if total != 1 }} in the closet</p>{% endif %}
+</section>
+
+<div class="browse">
+  <form class="filters panel wobbly2" method="get" action="{{ url_for('browse') }}" aria-label="Filters">
+    <div class="field">
+      <label for="q">Search</label>
+      <div class="search wobbly">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 1 1 0 13a6.5 6.5 0 1 1 0-13z M15.5 15.5L21 21" fill="none" stroke="#1f1f1f" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="q" name="q" type="search" placeholder="hoodie, tent, a friend's name…" value="{{ q }}">
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="label" id="cat-label">Category</span>
+      <div class="chips" role="group" aria-labelledby="cat-label">
+        <a class="chip wobbly {{ 'on' if not category }}" href="{{ browse_url(category='') }}" {% if not category %}aria-current="true"{% endif %}>All <span>{{ total }}</span></a>
+        {% for c in CATEGORIES if cat_counts.get(c) %}
+        <a class="chip wobbly {{ 'on' if category == c }}" href="{{ browse_url(category=c) }}" {% if category == c %}aria-current="true"{% endif %}>{{ c }} <span>{{ cat_counts[c] }}</span></a>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="category" value="{{ category }}">
+    </div>
+
+    <div class="field">
+      <label for="size">Size</label>
+      <select id="size" name="size" class="wobbly">
+        <option value="">Any size</option>
+        {% for s in sizes %}<option value="{{ s }}" {{ 'selected' if s|lower == size|lower }}>{{ s }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <label class="check">
+      <input type="checkbox" name="available" value="1" {{ 'checked' if available }}>
+      Only show stuff I can borrow now
+    </label>
+
+    <input type="hidden" name="sort" value="{{ sort }}">
+    <button class="btn wobbly" type="submit">Apply</button>
+    <a href="{{ url_for('browse') }}" style="font-size:19px">clear everything</a>
+  </form>
+
+  <main class="results">
+    <div class="results-bar">
+      <p>Showing <b>{{ items|length }}</b> of {{ total }} things</p>
+      <form class="sort" method="get" action="{{ url_for('browse') }}">
+        {% for k, v in [('q', q), ('category', category), ('size', size), ('available', '1' if available else '')] if v %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endfor %}
+        <label for="sort">Sort by</label>
+        <select id="sort" name="sort" class="wobbly" onchange="this.form.submit()">
+          <option value="new" {{ 'selected' if sort == 'new' }}>Newest first</option>
+          <option value="az" {{ 'selected' if sort == 'az' }}>Name A–Z</option>
+          <option value="owner" {{ 'selected' if sort == 'owner' }}>Owner A–Z</option>
+          <option value="avail" {{ 'selected' if sort == 'avail' }}>Available first</option>
+        </select>
+        <noscript><button class="btn light wobbly" type="submit">Sort</button></noscript>
+      </form>
+    </div>
+
+    {% if not items %}
+    <div class="empty wobbly">
+      <svg width="90" height="90" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 20 a14 14 0 1 1 0 28 a14 14 0 1 1 0-28 M60 48 L60 85 M60 60 L38 50 M60 60 L82 50 M60 85 L44 108 M60 85 L76 108 M54 32 L56 32 M64 32 L66 32 M54 41 Q60 37 66 41" fill="none" stroke="#1f1f1f" stroke-width="2.5" stroke-linecap="round"/></svg>
+      {% if total %}
+      <p style="margin:8px 0 0">Nothing matches that. Try a different search, or ask the group chat.</p>
+      {% else %}
+      <p style="margin:8px 0 0">The closet is empty! <a href="{{ url_for('new_item') }}">Be the first to list something.</a></p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="cards">
+      {% for it in items %}
+      {% set borrowed = it.status == 'borrowed' %}
+      <article class="card {{ 'is-borrowed' if borrowed }}">
+        <div class="tape"></div>
+        <a class="photo" href="{{ url_for('item_detail', item_id=it.id) }}" tabindex="-1" aria-hidden="true">
+          {% if it.cover %}<img src="{{ url_for('uploaded_file', filename=it.cover) }}" alt="" loading="lazy">{% endif %}
+          {% if borrowed %}<span class="stamp">BORROWED</span>{% endif %}
+        </a>
+        <h2><a href="{{ url_for('item_detail', item_id=it.id) }}">{{ it.name }}</a></h2>
+        <p class="meta">{{ it.category }} · {{ 'size ' ~ it.size if it.size else 'one size' }} · {{ it.condition }}</p>
+        <div class="owner">
+          <span class="avatar" aria-hidden="true">{{ it.owner_name[:1]|upper }}</span>
+          <span>from <b>{{ 'you' if it.owner_id == me.id else it.owner_name }}</b></span>
+        </div>
+        {% if borrowed %}
+          <p class="out">With {{ it.borrower_name or 'someone' }}{% if it.due_date %} until {{ it.due_date }}{% endif %}</p>
+          <button class="btn wobbly" disabled>Can't borrow right now</button>
+        {% elif it.owner_id == me.id %}
+          <a class="btn light wobbly" href="{{ url_for('item_detail', item_id=it.id) }}">Yours · view</a>
+        {% elif it.id in in_cart %}
+          <form method="post" action="{{ url_for('cart_remove', item_id=it.id) }}">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="back" value="{{ request.full_path }}">
+            <button class="btn incart wobbly" type="submit">In your cart (remove)</button>
+          </form>
+        {% else %}
+          <form method="post" action="{{ url_for('cart_add', item_id=it.id) }}">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="back" value="{{ request.full_path }}">
+            <button class="btn wobbly" type="submit">Add to cart</button>
+          </form>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </main>
+</div>
+{% endblock %}
